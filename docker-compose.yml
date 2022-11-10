@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+    app:
+        build:
+            args:
+                user: ${USER:-bakhadyrovf}
+                uid: ${UID:-1000}
+            context: ./
+            dockerfile: docker/Dockerfile
+        image: meal-hub-test-assignment
+        container_name: meal-hub-test-assignment-app
+        restart: unless-stopped
+        volumes:
+            -   ./:/var/www
+        networks:
+            - meal-hub-test-assignment-network
+
+    nginx:
+        image: nginx:alpine
+        container_name: meal-hub-test-assignment-nginx
+        restart: unless-stopped
+        ports:
+            -   "80:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/conf.d
+        networks:
+            - meal-hub-test-assignment-network
+
+    db:
+        image: postgres:latest
+        container_name: meal-hub-test-assignment-db
+        restart: unless-stopped
+        ports:
+            -   "5432:5432"
+        environment:
+            PGPASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            -  meal-hub-test-assignment-db-data:/var/lib/pgsql/data
+            -  ./docker/postgresql/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+        networks:
+            - meal-hub-test-assignment-network
+
+volumes:
+    meal-hub-test-assignment-db-data:
+        driver: local
+
+networks:
+    meal-hub-test-assignment-network:
+        driver: bridge
